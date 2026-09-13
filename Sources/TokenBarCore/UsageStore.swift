@@ -80,6 +80,8 @@ public final class UsageStore {
     public private(set) var isRefreshing = false
     public private(set) var backoff = BackoffPolicy()
     public private(set) var isPopoverOpen = false
+    /// Until when each provider counts as "in use" (see `noteActivity(for:)`).
+    public private(set) var activeUntil: [ProviderID: Date] = [:]
 
     @ObservationIgnored private let providers: [any UsageProvider]
     @ObservationIgnored private let settings: Settings
@@ -175,9 +177,48 @@ public final class UsageStore {
     }
 
     /// The interval the loop will sleep before the next refresh.
+    ///
+    /// While a provider is active (and `Settings.refreshWhileActive` is on) the interval drops to
+    /// that provider's `requiredInterval(for:)`, so its pacing still bounds how often it is polled.
     public var currentInterval: TimeInterval {
-        let base = isPopoverOpen ? Self.popoverOpenInterval : settings.refreshInterval
+        var base = isPopoverOpen ? Self.popoverOpenInterval : settings.refreshInterval
+        if settings.refreshWhileActive {
+            for id in activeProviders {
+                base = min(base, requiredInterval(for: id))
+            }
+        }
         return max(Self.minimumInterval, backoff.interval(base: base))
+    }
+
+    // MARK: Activity
+
+    /// Whether `id` was reported active within the last `Settings.activeWindow` seconds.
+    public func isActive(_ id: ProviderID) -> Bool {
+        guard let until = activeUntil[id] else { return false }
+        return until > now()
+    }
+
+    /// Enabled providers that are currently active, in display order.
+    public var activeProviders: [ProviderID] {
+        enabledProviders.map(\.id).filter(isActive)
+    }
+
+    /// Marks `id` as in use for `Settings.activeWindow` seconds. If `refreshWhileActive` is on, the
+    /// provider is fetched right away when its pacing allows and the loop is re-armed so it polls at
+    /// the provider's own minimum interval while the window lasts. Unknown or disabled providers are ignored.
+    public func noteActivity(for id: ProviderID) {
+        guard enabledProviders.contains(where: { $0.id == id }) else { return }
+        let current = now()
+        activeUntil = activeUntil.filter { $0.value > current }
+        activeUntil[id] = current.addingTimeInterval(Settings.activeWindow)
+        guard settings.refreshWhileActive else { return }
+        let due = isDue(id)
+        if isRunning {
+            // Restart so the pending sleep is cut short; only fetch now if pacing allows.
+            startLoop(refreshImmediately: due)
+        } else if due {
+            Task { await refreshAll() }
+        }
     }
 
     // MARK: Refresh
@@ -330,12 +371,16 @@ public final class UsageStore {
         }
     }
 
-    private func startLoop() {
+    private func startLoop(refreshImmediately: Bool = true) {
         loop?.cancel()
         loop = Task { [weak self] in
+            var shouldRefresh = refreshImmediately
             while !Task.isCancelled {
                 guard let self else { return }
-                await self.refreshAll()
+                if shouldRefresh {
+                    await self.refreshAll()
+                }
+                shouldRefresh = true
                 let interval = self.currentInterval
                 do {
                     try await self.sleeper(interval)
