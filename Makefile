@@ -1,0 +1,23 @@
+.PHONY: build test app run clean
+
+# With Command Line Tools only (no Xcode), the Swift Testing macro plugin lives in a
+# subdirectory that `swift test` does not search. Pass it explicitly when present.
+TESTING_PLUGINS := $(shell xcode-select -p 2>/dev/null)/usr/lib/swift/host/plugins/testing
+ifneq ($(wildcard $(TESTING_PLUGINS)),)
+TEST_FLAGS := -Xswiftc -plugin-path -Xswiftc $(TESTING_PLUGINS)
+endif
+
+build:
+	swift build
+
+test:
+	swift test $(TEST_FLAGS)
+
+app:
+	./scripts/bundle.sh
+
+run: app
+	open build/TokenBar.app
+
+clean:
+	rm -rf build .build
