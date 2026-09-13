@@ -7,3 +7,4 @@ xcuserdata/
 *.xcworkspace/xcuserdata/
 /fixtures/*.raw.json
 .codex-agent-*.log
+.agent-prompts/
