@@ -11,6 +11,8 @@ typealias AppSettings = Settings
 final class AppModel {
     let settings: AppSettings
     let store: UsageStore
+    /// Watches the CLIs' session directories so usage refreshes faster while they are in use.
+    let activityMonitor: ActivityMonitor
 
     /// Set `TOKENBAR_DEBUG_DUMP=1` to print a token-free status summary after the first refresh.
     static var debugDumpEnabled: Bool {
@@ -21,10 +23,13 @@ final class AppModel {
         let settings = AppSettings()
         self.settings = settings
         self.store = UsageStore(providers: [ClaudeProvider(), CodexProvider()], settings: settings)
+        self.activityMonitor = ActivityMonitor(roots: ActivityMonitor.defaultRoots())
     }
 
     func start() {
         store.start()
+        activityMonitor.onActivity = { [store] in store.noteActivity(for: $0) }
+        activityMonitor.start()
         if Self.debugDumpEnabled {
             Task { [store] in
                 await store.refreshAll()
@@ -106,6 +111,8 @@ enum DebugDump {
         if let lastUpdated = store.lastUpdated {
             lines.append("updated: \(iso.string(from: lastUpdated))")
         }
+        let active = store.activeProviders.map(\.rawValue)
+        lines.append("activity: \(active.isEmpty ? "none" : active.joined(separator: " "))")
         let glyphs = store.orderedProviders.map { "\($0.id.rawValue)=\(ProviderGlyph.image(for: $0.id) == nil ? "missing" : "ok")" }
         lines.append("glyphs: \(glyphs.joined(separator: " "))")
         return lines.joined(separator: "\n")

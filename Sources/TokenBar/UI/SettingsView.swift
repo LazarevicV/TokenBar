@@ -14,6 +14,7 @@ struct SettingsView: View {
                         Text(Self.label(for: interval)).tag(interval)
                     }
                 }
+                Toggle("Refresh faster while Claude or Codex are in use", isOn: $settings.refreshWhileActive)
             }
             Section("Menu bar") {
                 Toggle("Show remaining % in menu bar", isOn: $settings.showPercentInMenuBar)
