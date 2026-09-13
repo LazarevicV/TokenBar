@@ -19,18 +19,22 @@ public struct ProviderUsage: Equatable, Sendable {
     public var plan: String?
     /// Free-form secondary lines (e.g. extra-usage credits).
     public var extras: [String]
+    /// Number of rate-limit reset credits the account can redeem (Codex only); nil when the provider does not report it.
+    public var resetCreditsAvailable: Int?
 
     public init(
         provider: ProviderID,
         session: UsageWindow? = nil,
         weekly: UsageWindow? = nil,
         plan: String? = nil,
-        extras: [String] = []
+        extras: [String] = [],
+        resetCreditsAvailable: Int? = nil
     ) {
         self.provider = provider
         self.session = session
         self.weekly = weekly
         self.plan = plan
         self.extras = extras
+        self.resetCreditsAvailable = resetCreditsAvailable
     }
 }

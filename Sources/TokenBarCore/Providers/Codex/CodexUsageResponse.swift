@@ -5,6 +5,7 @@ public struct CodexUsageResponse: Codable, Sendable {
     public var plan_type: String?
     public var rate_limit: RateLimit?
     public var credits: Credits?
+    public var rate_limit_reset_credits: ResetCredits?
 
     public struct RateLimit: Codable, Sendable {
         public var allowed: Bool?
@@ -38,5 +39,10 @@ public struct CodexUsageResponse: Codable, Sendable {
     public struct Credits: Codable, Sendable {
         public var has_credits: Bool?
         public var balance: String?
+    }
+
+    public struct ResetCredits: Codable, Sendable {
+        public var available_count: Int?
+        public var applicable_available_count: Int?
     }
 }

@@ -81,7 +81,8 @@ public struct CodexProvider: UsageProvider {
                 session: decoded.rate_limit?.primary_window?.usageWindow,
                 weekly: decoded.rate_limit?.secondary_window?.usageWindow,
                 plan: decoded.plan_type,
-                extras: limited ? ["Limit reached"] : []
+                extras: limited ? ["Limit reached"] : [],
+                resetCreditsAvailable: decoded.rate_limit_reset_credits?.available_count
             )
         }
     }

@@ -30,6 +30,14 @@ private func httpResponse(_ request: URLRequest, status: Int) -> HTTPURLResponse
     #expect(usage.session == UsageWindow(percent: 54, resetsAt: Date(timeIntervalSince1970: 1789313353), label: "5h"))
     #expect(usage.weekly == UsageWindow(percent: 8.5, resetsAt: Date(timeIntervalSince1970: 1789811371), label: "week"))
     #expect(usage.extras.isEmpty)
+    #expect(usage.resetCreditsAvailable == 2)
+}
+
+@Test func codexProviderWithoutResetCredits() async throws {
+    let provider = CodexProvider(credentialSource: TestCodexCredentials()) { request in
+        (Data(#"{"plan_type":"plus"}"#.utf8), httpResponse(request, status: 200))
+    }
+    #expect(try await provider.fetch().resetCreditsAvailable == nil)
 }
 
 @Test(arguments: [401, 403, 429, 500])
