@@ -35,6 +35,18 @@ struct ProviderGlyph: View {
 
     private static let cache = NSCache<NSString, NSImage>()
 
+    /// A copy of the glyph pre-sized for the status bar. `MenuBarExtra` labels ignore SwiftUI
+    /// frames and draw the `NSImage` at its own point size, so the size must live on the image.
+    static func menuBarImage(for id: ProviderID, pointSize: CGFloat = 15) -> NSImage? {
+        let key = "\(id.rawValue)-menubar-\(Int(pointSize))" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let base = image(for: id), let copy = base.copy() as? NSImage else { return nil }
+        copy.size = NSSize(width: pointSize, height: pointSize)
+        copy.isTemplate = true
+        cache.setObject(copy, forKey: key)
+        return copy
+    }
+
     /// White-on-transparent PNG (`<provider>-glyph.png`) marked as a template so SwiftUI can tint it.
     static func image(for id: ProviderID) -> NSImage? {
         let name = "\(id.rawValue)-glyph"

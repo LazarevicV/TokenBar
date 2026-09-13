@@ -15,13 +15,9 @@ struct MenuBarLabel: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            if let provider, let image = ProviderGlyph.image(for: provider) {
+            if let provider, let image = ProviderGlyph.menuBarImage(for: provider) {
                 Image(nsImage: image)
                     .renderingMode(.template)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(height: 14)
             } else {
                 Image(systemName: "gauge.with.dots.needle.33percent")
             }
