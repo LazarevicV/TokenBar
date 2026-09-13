@@ -88,6 +88,10 @@ public final class UsageStore {
     @ObservationIgnored private let wakeCenter: NotificationCenter
 
     @ObservationIgnored private var inFlight: Task<Void, Never>?
+    /// When each provider was last fetched; drives per-provider pacing.
+    @ObservationIgnored private var lastAttempt: [ProviderID: Date] = [:]
+    /// Consecutive HTTP 429s per provider; doubles that provider's minimum interval.
+    @ObservationIgnored private var rateLimitStrikes: [ProviderID: Int] = [:]
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var wakeObserver: NSObjectProtocol?
 
@@ -178,7 +182,21 @@ public final class UsageStore {
 
     // MARK: Refresh
 
-    /// Fetches all enabled providers concurrently. Concurrent calls await the in-flight refresh.
+    /// Seconds a provider must wait between fetches: its own minimum, doubled per consecutive 429.
+    public func requiredInterval(for id: ProviderID) -> TimeInterval {
+        guard let provider = providers.first(where: { $0.id == id }) else { return 0 }
+        let strikes = min(rateLimitStrikes[id] ?? 0, 6)
+        return min(provider.minimumRefreshInterval * pow(2, Double(strikes)), BackoffPolicy.defaultMaxInterval)
+    }
+
+    /// Whether the provider may be fetched now.
+    public func isDue(_ id: ProviderID) -> Bool {
+        guard let last = lastAttempt[id] else { return true }
+        return now().timeIntervalSince(last) >= requiredInterval(for: id)
+    }
+
+    /// Fetches all enabled providers that are due, concurrently. Providers fetched too recently
+    /// keep their current status. Concurrent calls await the in-flight refresh.
     public func refreshAll() async {
         if let inFlight {
             await inFlight.value
@@ -197,7 +215,19 @@ public final class UsageStore {
             inFlight = nil
         }
 
-        let targets = enabledProviders
+        let enabled = enabledProviders
+        // Drop disabled providers, mark newly enabled ones as loading, keep the rest as-is.
+        var newStatuses = statuses.filter { id, _ in enabled.contains { $0.id == id } }
+        for provider in enabled where newStatuses[provider.id] == nil {
+            newStatuses[provider.id] = .loading
+        }
+        let targets = enabled.filter { isDue($0.id) }
+        guard !targets.isEmpty else {
+            statuses = newStatuses
+            return
+        }
+        let startedAt = now()
+        for provider in targets { lastAttempt[provider.id] = startedAt }
         let results = await withTaskGroup(of: (ProviderID, Result<ProviderUsage, Error>).self) { group in
             for provider in targets {
                 group.addTask {
@@ -216,7 +246,6 @@ public final class UsageStore {
         }
 
         let timestamp = now()
-        var newStatuses: [ProviderID: ProviderStatus] = [:]
         var shouldBackOff = false
         for provider in targets {
             guard let result = results[provider.id] else { continue }
@@ -224,9 +253,14 @@ public final class UsageStore {
             case .success(let usage):
                 newStatuses[provider.id] = .ok(usage)
                 lastGood[provider.id] = LastGood(usage: usage, at: timestamp)
+                rateLimitStrikes[provider.id] = 0
             case .failure(let error):
                 newStatuses[provider.id] = Self.status(for: error)
-                if BackoffPolicy.shouldBackOff(error) { shouldBackOff = true }
+                if case ProviderError.http(429) = error {
+                    rateLimitStrikes[provider.id, default: 0] += 1
+                } else if BackoffPolicy.shouldBackOff(error) {
+                    shouldBackOff = true
+                }
             }
         }
         statuses = newStatuses

@@ -50,6 +50,9 @@ struct FakeProvider: UsageProvider {
         self.state = FakeProviderState(result: result)
     }
 
+    /// Tests drive refreshes with a fixed clock, so pacing is disabled unless a test opts in.
+    var minimumRefreshInterval: TimeInterval = 0
+
     func fetch() async throws -> ProviderUsage {
         try await state.fetch()
     }
@@ -334,10 +337,10 @@ struct UsageStoreTests {
         #expect(store.menuBarSessionRemaining(for: .codex) == nil)
     }
 
-    @Test func backsOffOnRateLimitAndResetsOnSuccess() async {
+    @Test func backsOffOnServerErrorAndResetsOnSuccess() async {
         let (settings, defaults, name) = makeSettings()
         defer { defaults.removePersistentDomain(forName: name) }
-        let claude = FakeProvider(id: .claude, result: .failure(ProviderError.http(429)))
+        let claude = FakeProvider(id: .claude, result: .failure(ProviderError.http(503)))
         let codex = FakeProvider(id: .codex, result: .success(usage(.codex, session: 1)))
         let store = UsageStore(providers: [claude, codex], settings: settings, sleeper: { _ in })
         #expect(store.currentInterval == 60)
@@ -406,7 +409,7 @@ struct UsageStoreTests {
         defer { defaults.removePersistentDomain(forName: name) }
         settings.enabledProviders = [.claude]
         settings.refreshInterval = 30
-        let claude = FakeProvider(id: .claude, result: .failure(ProviderError.http(429)))
+        let claude = FakeProvider(id: .claude, result: .failure(ProviderError.http(503)))
         let recorder = SleepRecorder(limit: 3)
         let store = UsageStore(
             providers: [claude],
@@ -487,5 +490,46 @@ struct UsageStoreTests {
         center.post(name: NSWorkspace.didWakeNotification, object: nil)
         try? await Task.sleep(nanoseconds: 50_000_000)
         #expect(await claude.state.calls == 2)
+    }
+}
+
+
+@MainActor
+struct UsageStorePacingTests {
+    @Test func providerMinimumIntervalIsHonouredAndDoubledOn429() async {
+        let (settings, defaults, name) = makeSettings()
+        defer { defaults.removePersistentDomain(forName: name) }
+        var clock = Date(timeIntervalSince1970: 1_000_000)
+        var claude = FakeProvider(id: .claude, result: .success(usage(.claude, session: 10)))
+        claude.minimumRefreshInterval = 120
+        let codex = FakeProvider(id: .codex, result: .success(usage(.codex, session: 20)))
+        let store = UsageStore(providers: [claude, codex], settings: settings, now: { clock }, sleeper: { _ in })
+
+        await store.refreshAll()
+        #expect(await claude.state.calls == 1)
+        #expect(await codex.state.calls == 1)
+
+        // 30 s later only Codex is due; Claude keeps its status untouched.
+        clock = clock.addingTimeInterval(30)
+        await store.refreshAll()
+        #expect(await claude.state.calls == 1)
+        #expect(await codex.state.calls == 2)
+        #expect(store.statuses[.claude] == .ok(usage(.claude, session: 10)))
+
+        // After the minimum interval Claude is fetched again; a 429 doubles its interval.
+        await claude.state.set(.failure(ProviderError.http(429)))
+        clock = clock.addingTimeInterval(100)
+        await store.refreshAll()
+        #expect(await claude.state.calls == 2)
+        #expect(store.requiredInterval(for: .claude) == 240)
+        #expect(store.backoff.consecutiveFailures == 0, "429 must not slow the other provider")
+
+        clock = clock.addingTimeInterval(150)
+        #expect(!store.isDue(.claude))
+        clock = clock.addingTimeInterval(100)
+        #expect(store.isDue(.claude))
+        await claude.state.set(.success(usage(.claude, session: 5)))
+        await store.refreshAll()
+        #expect(store.requiredInterval(for: .claude) == 120)
     }
 }
