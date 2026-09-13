@@ -1,7 +1,7 @@
 import SwiftUI
 import TokenBarCore
 
-/// Static sample data for previews and for the app until the real store is wired in.
+/// Static sample data for previews.
 enum SampleData {
     static let now = Date()
 
@@ -58,6 +58,13 @@ enum SampleData {
         status: .error("Offline · showing data from 3 min ago")
     )
 
+    static let stale = ProviderSection(
+        id: .claude,
+        displayName: "Claude",
+        status: claudeOK.status,
+        staleMessage: "Offline · showing data from 3 min ago"
+    )
+
     static let sections: [ProviderSection] = [claudeOK, codexOK]
 }
 
@@ -96,6 +103,8 @@ struct PopoverView_Previews: PreviewProvider {
             .previewDisplayName("Popover – error states")
         popover([SampleData.claudeOK, SampleData.tokenExpired])
             .previewDisplayName("Popover – token expired")
+        popover([SampleData.stale, SampleData.codexOK])
+            .previewDisplayName("Popover – stale")
         popover([], lastUpdated: nil)
             .previewDisplayName("Popover – no providers")
     }

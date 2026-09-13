@@ -22,6 +22,7 @@ struct PopoverView: View {
                 ProviderSectionView(
                     displayName: section.displayName,
                     status: section.status,
+                    staleMessage: section.staleMessage,
                     onAction: onAction.map { handler in { handler(section.id) } }
                 )
             }

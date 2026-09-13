@@ -5,6 +5,8 @@ import TokenBarCore
 struct ProviderSectionView: View {
     var displayName: String
     var status: ProviderStatus
+    /// Shown under the bars (with a Retry button) when `status` carries last-good data after a failed refresh.
+    var staleMessage: String?
     var onAction: (() -> Void)?
     var formatter = ResetFormatter()
 
@@ -15,7 +17,12 @@ struct ProviderSectionView: View {
             header
             switch status {
             case .ok(let usage):
-                usageRows(usage)
+                usageRows(usage).opacity(staleMessage == nil ? 1 : 0.6)
+                if let staleMessage {
+                    statusRow(buttonTitle: "Retry") {
+                        Text(staleMessage).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
             case .loading:
                 statusRow {
                     ProgressView().controlSize(.small)
