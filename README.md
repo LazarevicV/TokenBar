@@ -59,6 +59,8 @@ Other states:
 Open with the gear button (or `Cmd-,` while the popover is open):
 
 - **Refresh every** 30 s / 1 min / 5 min (15 s while the popover is open).
+- **Refresh faster while Claude or Codex are in use** – see *Activity-driven
+  refresh* below.
 - **Show remaining % in menu bar** – toggles the text next to the icon.
 - **Menu bar shows** – *Lowest remaining* across providers, or Claude / Codex only.
 - **Launch at login** – registers via `SMAppService`; errors are shown inline.
@@ -66,7 +68,26 @@ Open with the gear button (or `Cmd-,` while the popover is open):
 - **Providers** – enable/disable Claude and Codex; takes effect immediately.
 
 Set `TOKENBAR_DEBUG_DUMP=1` when launching the binary to print a token-free
-summary (percentages, reset times, plan, status) after the first refresh.
+summary (percentages, reset times, plan, status, active providers) after the
+first refresh.
+
+## Activity-driven refresh
+
+While you are actively using a CLI, TokenBar polls that provider at its own
+minimum interval (Codex every 15 s, Claude every ~2 min) for 5 minutes after
+the last sign of activity, regardless of the configured refresh interval. The
+popover footer shows a small "● active" caption while this is in effect.
+
+Activity is detected by watching the directories the CLIs write session data
+to, using FSEvents:
+
+- Claude Code: `$CLAUDE_CONFIG_DIR/projects` (default `~/.claude/projects`)
+- Codex: `$CODEX_HOME/sessions` (default `~/.codex/sessions`)
+
+Only the fact that *something* changed under those directories is used; file
+names and contents are never read. Directories that do not exist yet are
+checked once a minute and watched once they appear. Turn the feature off with
+the *Refresh faster while Claude or Codex are in use* setting.
 
 ## Notes
 

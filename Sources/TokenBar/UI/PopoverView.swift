@@ -12,6 +12,8 @@ struct PopoverView: View {
     var onAction: ((ProviderID) -> Void)?
     /// Shown for providers that report reset credits (Codex); nil hides the button.
     var onResetLimits: ((ProviderID) -> Void)? = nil
+    /// Display names of providers whose CLI is currently in use; shown as a small caption in the footer.
+    var activeProviders: [String] = []
 
     static let width: CGFloat = 280
 
@@ -73,6 +75,12 @@ struct PopoverView: View {
                 Text(updatedText(now: context.date))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+            if !activeProviders.isEmpty {
+                Text("● active")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                    .help("\(activeProviders.joined(separator: ", ")) in use — refreshing faster")
             }
             Spacer()
             Button("Quit", action: onQuit)

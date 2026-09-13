@@ -47,10 +47,16 @@ private struct MenuBarContent: View {
             onOpenSettings: openSettings,
             onQuit: { NSApplication.shared.terminate(nil) },
             onAction: { model.performAction(for: $0) },
-            onResetLimits: { model.confirmAndResetLimits(for: $0) }
+            onResetLimits: { model.confirmAndResetLimits(for: $0) },
+            activeProviders: activeProviderNames
         )
         .onAppear { model.store.setPopoverOpen(true) }
         .onDisappear { model.store.setPopoverOpen(false) }
+    }
+
+    private var activeProviderNames: [String] {
+        let active = model.store.activeProviders
+        return model.store.orderedProviders.filter { active.contains($0.id) }.map(\.displayName)
     }
 
     private func openSettings() {
