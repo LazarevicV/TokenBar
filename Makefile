@@ -1,4 +1,4 @@
-.PHONY: build test app run clean icon
+.PHONY: build test app run clean icon scan-secrets
 
 # With Command Line Tools only (no Xcode), the Swift Testing macro plugin lives in a
 # subdirectory that `swift test` does not search. Pass it explicitly when present.
@@ -18,6 +18,9 @@ app:
 
 run: app
 	open build/TokenBar.app
+
+scan-secrets:
+	./scripts/scan-secrets.sh
 
 clean:
 	rm -rf build .build

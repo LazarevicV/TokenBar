@@ -25,11 +25,27 @@ Other targets:
 make build      # swift build (debug)
 make test       # swift test
 make app        # release build + assemble build/TokenBar.app
+make scan-secrets  # fail if a tracked file holds a credential-shaped string
 make clean
 ```
 
 The app is menu-bar only: it has no Dock icon and no main window. Click the gauge
 icon in the menu bar to open the popover; use Quit in the popover to exit.
+
+## Continuous integration
+
+Every pull request and every push to `main` runs three checks on GitHub Actions
+(`.github/workflows/ci.yml`):
+
+- **Build and test** — `make build` then `make test` on a macOS runner. The live
+  tests stay skipped because they need `TOKENBAR_LIVE=1` and a signed-in CLI.
+- **Bundle app** — runs `make app`, checks the bundle layout and the ad-hoc
+  signature, and uploads `TokenBar.app` as a downloadable artifact.
+- **Secret scan** — `scripts/scan-secrets.sh` fails the build if a tracked file
+  contains anything shaped like a token, a JWT or a personal email address.
+
+`main` is protected: the three checks must pass before a pull request can merge.
+Administrators can still push directly when needed.
 
 ## Popover and states
 
