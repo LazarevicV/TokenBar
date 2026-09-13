@@ -54,7 +54,8 @@ Other states:
 Open with the gear button (or `Cmd-,` while the popover is open):
 
 - **Refresh every** 30 s / 1 min / 5 min (15 s while the popover is open).
-- **Show highest session % in menu bar** – toggles the text next to the icon.
+- **Show remaining % in menu bar** – toggles the text next to the icon.
+- **Menu bar shows** – *Lowest remaining* across providers, or Claude / Codex only.
 - **Launch at login** – registers via `SMAppService`; errors are shown inline.
   Only works from a `.app` bundle (`make app`), not the bare binary.
 - **Providers** – enable/disable Claude and Codex; takes effect immediately.

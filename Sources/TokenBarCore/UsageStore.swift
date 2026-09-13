@@ -143,12 +143,31 @@ public final class UsageStore {
         return lastGood[id] != nil
     }
 
-    /// Highest session percentage across providers with an `.ok` status.
+    /// Highest session (used) percentage across providers with an `.ok` status.
+    /// Kept for compatibility; the app shows remaining via `menuBarSessionRemaining(for:)`.
     public var highestSessionPercent: Double? {
         statuses.values.compactMap { status -> Double? in
             guard case .ok(let usage) = status else { return nil }
             return usage.session?.percent
         }.max()
+    }
+
+    /// Remaining session percentage for the menu bar. `.lowestRemaining` is the minimum across
+    /// providers with an `.ok` status; a specific provider yields its value only while it is `.ok`.
+    public func menuBarSessionRemaining(for choice: MenuBarProvider) -> Double? {
+        switch choice {
+        case .lowestRemaining:
+            return statuses.values.compactMap(sessionRemaining).min()
+        case .claude:
+            return statuses[.claude].flatMap(sessionRemaining)
+        case .codex:
+            return statuses[.codex].flatMap(sessionRemaining)
+        }
+    }
+
+    private func sessionRemaining(_ status: ProviderStatus) -> Double? {
+        guard case .ok(let usage) = status else { return nil }
+        return usage.session?.remaining
     }
 
     /// The interval the loop will sleep before the next refresh.

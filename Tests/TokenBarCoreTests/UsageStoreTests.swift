@@ -303,6 +303,37 @@ struct UsageStoreTests {
         #expect(store.highestSessionPercent == nil)
     }
 
+    @Test func menuBarSessionRemainingHonoursChoiceAndOkStatuses() async {
+        let (settings, defaults, name) = makeSettings()
+        defer { defaults.removePersistentDomain(forName: name) }
+        let claude = FakeProvider(id: .claude, result: .success(usage(.claude, session: 68)))
+        let codex = FakeProvider(id: .codex, result: .success(usage(.codex, session: 53)))
+        let store = UsageStore(providers: [claude, codex], settings: settings, sleeper: { _ in })
+        for choice in MenuBarProvider.allCases {
+            #expect(store.menuBarSessionRemaining(for: choice) == nil)
+        }
+
+        await store.refreshAll()
+        #expect(store.menuBarSessionRemaining(for: .lowestRemaining) == 32)
+        #expect(store.menuBarSessionRemaining(for: .claude) == 32)
+        #expect(store.menuBarSessionRemaining(for: .codex) == 47)
+
+        // A failed provider drops out of "lowest" and yields nil when chosen explicitly.
+        await claude.state.set(.failure(ProviderError.tokenExpired))
+        await store.refreshAll()
+        #expect(store.menuBarSessionRemaining(for: .lowestRemaining) == 47)
+        #expect(store.menuBarSessionRemaining(for: .claude) == nil)
+        #expect(store.menuBarSessionRemaining(for: .codex) == 47)
+
+        // Over-limit usage clamps to 0 % left; a provider without a session window contributes nothing.
+        await claude.state.set(.success(usage(.claude, session: 120)))
+        await codex.state.set(.success(usage(.codex, session: nil, weekly: 90)))
+        await store.refreshAll()
+        #expect(store.menuBarSessionRemaining(for: .lowestRemaining) == 0)
+        #expect(store.menuBarSessionRemaining(for: .claude) == 0)
+        #expect(store.menuBarSessionRemaining(for: .codex) == nil)
+    }
+
     @Test func backsOffOnRateLimitAndResetsOnSuccess() async {
         let (settings, defaults, name) = makeSettings()
         defer { defaults.removePersistentDomain(forName: name) }

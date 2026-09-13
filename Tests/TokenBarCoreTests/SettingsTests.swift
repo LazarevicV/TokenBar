@@ -17,6 +17,7 @@ struct SettingsTests {
         let settings = Settings(defaults: temp.defaults)
         #expect(settings.refreshInterval == 60)
         #expect(settings.showPercentInMenuBar == true)
+        #expect(settings.menuBarProvider == .lowestRemaining)
         #expect(settings.enabledProviders == [.claude, .codex])
         #expect(settings.launchAtLoginError == nil)
     }
@@ -27,11 +28,13 @@ struct SettingsTests {
             let settings = Settings(defaults: temp.defaults)
             settings.refreshInterval = 300
             settings.showPercentInMenuBar = false
+            settings.menuBarProvider = .codex
             settings.enabledProviders = [.codex]
         }
         let reloaded = Settings(defaults: temp.defaults)
         #expect(reloaded.refreshInterval == 300)
         #expect(reloaded.showPercentInMenuBar == false)
+        #expect(reloaded.menuBarProvider == .codex)
         #expect(reloaded.enabledProviders == [.codex])
     }
 
@@ -40,9 +43,11 @@ struct SettingsTests {
         let settings = Settings(defaults: temp.defaults)
         settings.refreshInterval = 30
         settings.showPercentInMenuBar = false
+        settings.menuBarProvider = .claude
         settings.setEnabled(.claude, false)
         #expect(temp.defaults.double(forKey: "tokenbar.refreshInterval") == 30)
         #expect(temp.defaults.bool(forKey: "tokenbar.showPercentInMenuBar") == false)
+        #expect(temp.defaults.string(forKey: "tokenbar.menuBarProvider") == "claude")
         #expect(temp.defaults.stringArray(forKey: "tokenbar.enabledProviders") == ["codex"])
     }
 
@@ -63,6 +68,15 @@ struct SettingsTests {
         temp.defaults.set(90.0, forKey: Settings.Keys.refreshInterval)
         let settings = Settings(defaults: temp.defaults)
         #expect(settings.refreshInterval == 60)
+    }
+
+    @Test func unknownStoredMenuBarProviderFallsBackToDefault() {
+        let temp = TempDefaults()
+        temp.defaults.set("gemini", forKey: Settings.Keys.menuBarProvider)
+        let settings = Settings(defaults: temp.defaults)
+        #expect(settings.menuBarProvider == .lowestRemaining)
+        temp.defaults.set("lowest", forKey: Settings.Keys.menuBarProvider)
+        #expect(Settings(defaults: temp.defaults).menuBarProvider == .lowestRemaining)
     }
 
     @Test func enableAndDisableProviders() {

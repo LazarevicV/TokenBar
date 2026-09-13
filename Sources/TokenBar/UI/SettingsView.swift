@@ -16,7 +16,13 @@ struct SettingsView: View {
                 }
             }
             Section("Menu bar") {
-                Toggle("Show highest session % in menu bar", isOn: $settings.showPercentInMenuBar)
+                Toggle("Show remaining % in menu bar", isOn: $settings.showPercentInMenuBar)
+                Picker("Menu bar shows", selection: $settings.menuBarProvider) {
+                    ForEach(MenuBarProvider.allCases, id: \.self) { choice in
+                        Text(Self.label(for: choice)).tag(choice)
+                    }
+                }
+                .disabled(!settings.showPercentInMenuBar)
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
                 if let error = settings.launchAtLoginError {
                     Text(error)
@@ -46,6 +52,14 @@ struct SettingsView: View {
                 }
             }
         ))
+    }
+
+    static func label(for choice: MenuBarProvider) -> String {
+        switch choice {
+        case .lowestRemaining: return "Lowest remaining"
+        case .claude: return "Claude"
+        case .codex: return "Codex"
+        }
     }
 
     static func label(for interval: TimeInterval) -> String {

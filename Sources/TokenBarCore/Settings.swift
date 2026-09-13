@@ -2,6 +2,14 @@ import Foundation
 import Observation
 import ServiceManagement
 
+/// Which provider's remaining session percentage the menu-bar text shows.
+public enum MenuBarProvider: String, CaseIterable, Sendable {
+    /// The provider with the least session left across all `.ok` providers.
+    case lowestRemaining = "lowest"
+    case claude
+    case codex
+}
+
 /// User-facing preferences, persisted in `UserDefaults` under `tokenbar.`-prefixed keys.
 ///
 /// The defaults suite is injectable so tests can use a throwaway suite.
@@ -11,6 +19,7 @@ public final class Settings {
     public enum Keys {
         public static let refreshInterval = "tokenbar.refreshInterval"
         public static let showPercentInMenuBar = "tokenbar.showPercentInMenuBar"
+        public static let menuBarProvider = "tokenbar.menuBarProvider"
         public static let enabledProviders = "tokenbar.enabledProviders"
     }
 
@@ -18,6 +27,7 @@ public final class Settings {
     public static let allowedRefreshIntervals: [TimeInterval] = [30, 60, 300]
     public static let defaultRefreshInterval: TimeInterval = 60
     public static let defaultEnabledProviders: Set<ProviderID> = [.claude, .codex]
+    public static let defaultMenuBarProvider: MenuBarProvider = .lowestRemaining
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -34,9 +44,14 @@ public final class Settings {
         }
     }
 
-    /// Show the highest session percentage next to the menu bar icon.
+    /// Show the remaining session percentage next to the menu bar icon.
     public var showPercentInMenuBar: Bool {
         didSet { defaults.set(showPercentInMenuBar, forKey: Keys.showPercentInMenuBar) }
+    }
+
+    /// Whose remaining session percentage the menu bar shows.
+    public var menuBarProvider: MenuBarProvider {
+        didSet { defaults.set(menuBarProvider.rawValue, forKey: Keys.menuBarProvider) }
     }
 
     /// Providers the user wants polled and shown.
@@ -86,6 +101,12 @@ public final class Settings {
             showPercentInMenuBar = defaults.bool(forKey: Keys.showPercentInMenuBar)
         } else {
             showPercentInMenuBar = true
+        }
+
+        if let raw = defaults.string(forKey: Keys.menuBarProvider), let stored = MenuBarProvider(rawValue: raw) {
+            menuBarProvider = stored
+        } else {
+            menuBarProvider = Settings.defaultMenuBarProvider
         }
 
         if let raw = defaults.stringArray(forKey: Keys.enabledProviders) {
