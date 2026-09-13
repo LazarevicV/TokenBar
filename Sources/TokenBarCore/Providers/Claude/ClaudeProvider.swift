@@ -87,14 +87,15 @@ public struct ClaudeProvider: UsageProvider {
         func money(_ minorUnits: Double) -> String {
             formatter.string(from: NSNumber(value: minorUnits / divisor)) ?? "—"
         }
-        if let utilization = extra.utilization {
-            let percent = String(format: "%.0f%%", locale: Locale(identifier: "en_US_POSIX"), utilization * 100)
-            if let limit = extra.monthlyLimit { return "Extra usage: \(percent) of \(money(limit))" }
-            return "Extra usage: \(percent)"
-        }
+        // Prefer the money figures; `utilization` is already a percent (0.21 == 0.21%), not a fraction.
         if let used = extra.usedCredits {
             if let limit = extra.monthlyLimit { return "Extra usage: \(money(used)) of \(money(limit))" }
             return "Extra usage: \(money(used))"
+        }
+        if let utilization = extra.utilization {
+            let percent = String(format: "%.1f%%", locale: Locale(identifier: "en_US_POSIX"), utilization)
+            if let limit = extra.monthlyLimit { return "Extra usage: \(percent) of \(money(limit))" }
+            return "Extra usage: \(percent)"
         }
         return "Extra usage: enabled"
     }

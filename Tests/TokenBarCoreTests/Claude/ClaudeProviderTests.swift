@@ -31,7 +31,7 @@ private func response(_ request: URLRequest, status: Int) -> HTTPURLResponse {
     #expect(abs(session.resetsAt.timeIntervalSince1970 - 1789315800.944794) < 0.001)
     #expect(abs(weekly.resetsAt.timeIntervalSince1970 - 1789761600.944817) < 0.001)
     #expect(usage.plan == "pro")
-    #expect(usage.extras == ["Extra usage: 21% of $99.00"])
+    #expect(usage.extras == ["Extra usage: $0.21 of $99.00"])
 }
 
 @Test(arguments: [401, 403, 429, 500]) func claudeProviderMapsHTTPFailures(status: Int) async {
