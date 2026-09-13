@@ -1,4 +1,4 @@
-.PHONY: build test app run clean
+.PHONY: build test app run clean icon
 
 # With Command Line Tools only (no Xcode), the Swift Testing macro plugin lives in a
 # subdirectory that `swift test` does not search. Pass it explicitly when present.
@@ -21,3 +21,8 @@ run: app
 
 clean:
 	rm -rf build .build
+
+# Regenerate Resources/AppIcon.icns from assets/tokenbar-logo-app-icon.png
+icon:
+	swift scripts/make-icon.swift assets/tokenbar-logo-app-icon.png build/AppIcon.iconset
+	iconutil -c icns build/AppIcon.iconset -o Resources/AppIcon.icns

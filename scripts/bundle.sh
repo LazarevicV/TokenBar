@@ -13,6 +13,11 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/TokenBar"
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
+if [ ! -f "$ROOT/Resources/AppIcon.icns" ]; then
+  swift "$ROOT/scripts/make-icon.swift" "$ROOT/assets/tokenbar-logo-app-icon.png" "$ROOT/build/AppIcon.iconset"
+  iconutil -c icns "$ROOT/build/AppIcon.iconset" -o "$ROOT/Resources/AppIcon.icns"
+fi
+cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
 codesign --force --deep --sign - "$APP"
