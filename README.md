@@ -48,6 +48,11 @@ Other states:
   caption such as `Offline · showing data from 3 min ago` and a *Retry* button.
   On 429/5xx the app backs off exponentially (up to 10 min).
 - **Limit reached** – a window is at 0 % left; the reset line turns red.
+- **Resets available** (Codex only) – how many rate-limit reset credits the
+  ChatGPT account holds. The *Reset limits…* button asks for confirmation, then
+  redeems one credit, which resets both the 5-hour and weekly windows.
+  **Redeeming is irreversible**: the credit is spent immediately and cannot be
+  restored. The button is disabled when the count is 0.
 
 ## Settings
 

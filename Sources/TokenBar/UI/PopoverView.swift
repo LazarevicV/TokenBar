@@ -10,6 +10,8 @@ struct PopoverView: View {
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
     var onAction: ((ProviderID) -> Void)?
+    /// Shown for providers that report reset credits (Codex); nil hides the button.
+    var onResetLimits: ((ProviderID) -> Void)? = nil
 
     static let width: CGFloat = 280
 
@@ -24,7 +26,8 @@ struct PopoverView: View {
                     displayName: section.displayName,
                     status: section.status,
                     staleMessage: section.staleMessage,
-                    onAction: onAction.map { handler in { handler(section.id) } }
+                    onAction: onAction.map { handler in { handler(section.id) } },
+                    onResetLimits: onResetLimits.map { handler in { handler(section.id) } }
                 )
             }
             if sections.isEmpty {

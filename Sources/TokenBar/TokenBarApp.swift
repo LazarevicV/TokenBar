@@ -46,7 +46,8 @@ private struct MenuBarContent: View {
             onRefresh: { model.refresh() },
             onOpenSettings: openSettings,
             onQuit: { NSApplication.shared.terminate(nil) },
-            onAction: { model.performAction(for: $0) }
+            onAction: { model.performAction(for: $0) },
+            onResetLimits: { model.confirmAndResetLimits(for: $0) }
         )
         .onAppear { model.store.setPopoverOpen(true) }
         .onDisappear { model.store.setPopoverOpen(false) }

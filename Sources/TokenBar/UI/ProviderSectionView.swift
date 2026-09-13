@@ -9,6 +9,8 @@ struct ProviderSectionView: View {
     /// Shown under the bars (with a Retry button) when `status` carries last-good data after a failed refresh.
     var staleMessage: String?
     var onAction: (() -> Void)?
+    /// Invoked by the "Reset limits…" button; the row is shown only when the usage reports reset credits.
+    var onResetLimits: (() -> Void)?
     var formatter = ResetFormatter()
 
     static let labelWidth: CGFloat = 104
@@ -84,6 +86,24 @@ struct ProviderSectionView: View {
         }
         ForEach(usage.extras, id: \.self) { extra in
             Text(extra).font(.caption).foregroundStyle(.secondary)
+        }
+        if let credits = usage.resetCreditsAvailable {
+            resetCreditsRow(available: credits)
+        }
+    }
+
+    private func resetCreditsRow(available: Int) -> some View {
+        row("Resets available") {
+            Text("\(available)")
+                .font(.body.monospacedDigit())
+                .accessibilityLabel("\(available) reset credits available")
+            Spacer(minLength: 0)
+            if let onResetLimits {
+                Button("Reset limits…", action: onResetLimits)
+                    .controlSize(.small)
+                    .disabled(available == 0)
+                    .help(available == 0 ? "No reset credits available" : "Redeem one reset credit (cannot be undone)")
+            }
         }
     }
 

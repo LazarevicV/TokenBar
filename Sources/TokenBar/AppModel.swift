@@ -65,6 +65,71 @@ final class AppModel {
         }
     }
 
+    /// Asks for confirmation, then redeems one Codex rate-limit reset credit and refreshes.
+    /// Uses `NSAlert` so the confirmation does not depend on popover/SwiftUI state.
+    func confirmAndResetLimits(for id: ProviderID = .codex) {
+        guard id == .codex, !isResettingLimits else { return }
+        let available: Int
+        if case .ok(let usage)? = store.status(for: id), let count = usage.resetCreditsAvailable {
+            available = count
+        } else if let usage = store.lastGood[id]?.usage, let count = usage.resetCreditsAvailable {
+            available = count
+        } else {
+            available = 0
+        }
+        guard available > 0 else {
+            Self.showAlert(title: "No reset credits", message: "Your account has no Codex reset credits to redeem.")
+            return
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Reset Codex rate limits?"
+        let credits = available == 1 ? "your last reset credit" : "one of your \(available) reset credits"
+        alert.informativeText = "This redeems \(credits) and resets both the 5-hour and weekly windows. This cannot be undone."
+        alert.addButton(withTitle: "Reset limits")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        isResettingLimits = true
+        Task { [store] in
+            defer { isResettingLimits = false }
+            do {
+                _ = try await CodexResetService().redeemFirstAvailable()
+                // Give the backend a moment to apply the reset before re-reading usage.
+                try? await Task.sleep(for: .seconds(2))
+                await store.refreshAll()
+            } catch {
+                Self.showAlert(title: "Could not reset Codex limits", message: Self.describe(error))
+            }
+        }
+    }
+
+    private(set) var isResettingLimits = false
+
+    /// Short, secret-free error text for the failure alert.
+    static func describe(_ error: Error) -> String {
+        switch error {
+        case ProviderError.tokenExpired: return "Session expired. Run `codex` once to refresh the token, then try again."
+        case ProviderError.notLoggedIn(let message): return message
+        case ProviderError.network(let message): return message
+        case ProviderError.http(let status): return "Codex returned HTTP \(status)."
+        case ProviderError.decoding(let message): return message
+        case let error as CodexResetError: return error.errorDescription ?? "No reset credit available."
+        case is CancellationError: return "The request was cancelled."
+        default: return "Unexpected error (\(type(of: error)))."
+        }
+    }
+
+    static func showAlert(title: String, message: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
     /// Opens Terminal and runs `command` in a new tab. Failures (e.g. denied Automation permission) are ignored.
     static func openTerminal(running command: String) {
         // Only known CLI names reach here; guard anyway so nothing unexpected is interpolated into the script.
@@ -101,6 +166,9 @@ enum DebugDump {
             }
             if !usage.extras.isEmpty {
                 lines.append("  extras: \(usage.extras.count) line(s)")
+            }
+            if let credits = usage.resetCreditsAvailable {
+                lines.append("  resetCredits: \(credits)")
             }
         }
         if let lastUpdated = store.lastUpdated {

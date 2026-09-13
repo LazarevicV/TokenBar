@@ -23,7 +23,20 @@ enum SampleData {
             provider: .codex,
             session: UsageWindow(percent: 53, resetsAt: now.addingTimeInterval(30 * 3600), label: "5h"),
             weekly: UsageWindow(percent: 24, resetsAt: now.addingTimeInterval(8 * 86_400), label: "week"),
-            plan: "plus"
+            plan: "plus",
+            resetCreditsAvailable: 2
+        ))
+    )
+
+    static let codexNoResetCredits = ProviderSection(
+        id: .codex,
+        displayName: "Codex",
+        status: .ok(ProviderUsage(
+            provider: .codex,
+            session: UsageWindow(percent: 53, resetsAt: now.addingTimeInterval(30 * 3600), label: "5h"),
+            weekly: UsageWindow(percent: 24, resetsAt: now.addingTimeInterval(8 * 86_400), label: "week"),
+            plan: "plus",
+            resetCreditsAvailable: 0
         ))
     )
 
@@ -82,7 +95,8 @@ private func popover(
         lastUpdated: lastUpdated,
         isRefreshing: isRefreshing,
         onRefresh: {}, onOpenSettings: {}, onQuit: {},
-        onAction: onAction
+        onAction: onAction,
+        onResetLimits: { _ in }
     )
 }
 
@@ -105,6 +119,8 @@ struct PopoverView_Previews: PreviewProvider {
             .previewDisplayName("Popover – token expired")
         popover([SampleData.stale, SampleData.codexOK])
             .previewDisplayName("Popover – stale")
+        popover([SampleData.claudeOK, SampleData.codexNoResetCredits])
+            .previewDisplayName("Popover – no reset credits")
         popover([], lastUpdated: nil)
             .previewDisplayName("Popover – no providers")
     }
@@ -112,6 +128,12 @@ struct PopoverView_Previews: PreviewProvider {
 
 struct ProviderSectionView_Previews: PreviewProvider {
     static var previews: some View {
+        ProviderSectionView(id: .codex, displayName: "Codex", status: SampleData.codexOK.status, onResetLimits: {})
+            .padding().frame(width: PopoverView.width)
+            .previewDisplayName("Section – reset credits available")
+        ProviderSectionView(id: .codex, displayName: "Codex", status: SampleData.codexNoResetCredits.status, onResetLimits: {})
+            .padding().frame(width: PopoverView.width)
+            .previewDisplayName("Section – no reset credits")
         ProviderSectionView(id: .codex, displayName: "Codex", status: .tokenExpired, onAction: {})
             .padding().frame(width: PopoverView.width)
             .previewDisplayName("Section – token expired")
