@@ -33,9 +33,10 @@ icon in the menu bar to open the popover; use Quit in the popover to exit.
 
 ## Popover and states
 
-Each provider block shows the current-session and weekly bars (accent < 70 %,
-orange 70–89 %, red >= 90 %), the session reset time and the weekly reset as a
-caption. The menu-bar text shows the highest session percentage across providers.
+Each provider block shows the current-session and weekly bars as *remaining*
+percentage (a full bar means plenty left; accent > 30 % left, orange 10–30 %
+left, red < 10 % left), the session reset time and the weekly reset as a
+caption. The menu-bar text shows the remaining session percentage.
 Other states:
 
 - **Loading** – first fetch in progress.
@@ -46,7 +47,7 @@ Other states:
 - **Offline / HTTP error** – the last good data stays visible, dimmed, with a
   caption such as `Offline · showing data from 3 min ago` and a *Retry* button.
   On 429/5xx the app backs off exponentially (up to 10 min).
-- **Limit reached** – a window is at 100 %; the reset line turns red.
+- **Limit reached** – a window is at 0 % left; the reset line turns red.
 
 ## Settings
 

@@ -130,8 +130,9 @@ struct ProviderSectionView_Previews: PreviewProvider {
 struct UsageBarView_Previews: PreviewProvider {
     static var previews: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach([0, 41, 68, 78, 94, 100], id: \.self) { percent in
-                UsageBarView(label: "Current session", percent: Double(percent))
+            // Remaining percentages: plenty left, warning band (10–30), critical (< 10), exhausted.
+            ForEach([100, 59, 32, 21, 12, 6, 0], id: \.self) { remaining in
+                UsageBarView(label: "Current session", remaining: Double(remaining))
             }
         }
         .padding()
@@ -143,11 +144,11 @@ struct UsageBarView_Previews: PreviewProvider {
 struct MenuBarLabel_Previews: PreviewProvider {
     static var previews: some View {
         HStack(spacing: 16) {
-            MenuBarLabel(highestSessionPercent: nil, showPercent: true)
-            MenuBarLabel(highestSessionPercent: 68, showPercent: true)
-            MenuBarLabel(highestSessionPercent: 78, showPercent: true)
-            MenuBarLabel(highestSessionPercent: 100, showPercent: true)
-            MenuBarLabel(highestSessionPercent: 68, showPercent: false)
+            MenuBarLabel(sessionRemaining: nil, showPercent: true)
+            MenuBarLabel(sessionRemaining: 32, showPercent: true)
+            MenuBarLabel(sessionRemaining: 22, showPercent: true)
+            MenuBarLabel(sessionRemaining: 0, showPercent: true)
+            MenuBarLabel(sessionRemaining: 32, showPercent: false)
         }
         .padding()
         .previewDisplayName("Menu bar label")

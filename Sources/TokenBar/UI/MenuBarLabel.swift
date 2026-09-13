@@ -1,18 +1,20 @@
 import SwiftUI
 import TokenBarCore
 
-/// Menu-bar item content: gauge symbol plus optional compact highest-session percentage.
+/// Menu-bar item content: gauge symbol plus optional compact remaining session percentage.
 struct MenuBarLabel: View {
-    var highestSessionPercent: Double?
+    /// Percentage left in the session window chosen by `Settings.menuBarProvider`.
+    var sessionRemaining: Double?
     var showPercent: Bool
 
-    private var level: UsageLevel? { highestSessionPercent.map(UsageLevel.init(percent:)) }
+    private var level: UsageLevel? { sessionRemaining.map(UsageLevel.init(remaining:)) }
+    private var roundedRemaining: Int? { sessionRemaining.map { Int(min(max($0, 0), 100).rounded()) } }
 
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: "gauge.with.dots.needle.33percent")
-            if showPercent, let percent = highestSessionPercent {
-                Text("\(Int(min(max(percent, 0), 999).rounded()))%")
+            if showPercent, let roundedRemaining {
+                Text("\(roundedRemaining)%")
                     .font(.system(size: 12, weight: .medium).monospacedDigit())
             }
         }
@@ -22,7 +24,7 @@ struct MenuBarLabel: View {
     }
 
     private var accessibilityText: String {
-        guard let percent = highestSessionPercent else { return "TokenBar" }
-        return "TokenBar, highest session usage \(Int(percent.rounded())) percent"
+        guard let roundedRemaining else { return "TokenBar" }
+        return "TokenBar, session \(roundedRemaining) percent left"
     }
 }

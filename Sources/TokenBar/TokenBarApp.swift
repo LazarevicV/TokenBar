@@ -19,7 +19,7 @@ struct TokenBarApp: App {
             MenuBarContent(model: model)
         } label: {
             MenuBarLabel(
-                highestSessionPercent: model.store.highestSessionPercent,
+                sessionRemaining: model.store.highestSessionPercent.map { max(0, min(100, 100 - $0)) },
                 showPercent: model.settings.showPercentInMenuBar
             )
         }

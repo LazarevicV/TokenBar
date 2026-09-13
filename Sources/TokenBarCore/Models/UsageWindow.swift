@@ -9,6 +9,12 @@ public struct UsageWindow: Equatable, Sendable {
     /// Human label such as "5h" or "week".
     public var label: String
 
+    /// Percentage still available in this window: `100 - percent`, clamped to 0–100. NaN yields 0.
+    public var remaining: Double {
+        guard !percent.isNaN else { return 0 }
+        return max(0, min(100, 100 - percent))
+    }
+
     public init(percent: Double, resetsAt: Date, label: String) {
         self.percent = percent
         self.resetsAt = resetsAt

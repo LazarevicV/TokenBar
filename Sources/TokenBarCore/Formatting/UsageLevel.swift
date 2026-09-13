@@ -1,16 +1,16 @@
 import Foundation
 
-/// Severity bucket for a usage percentage; drives bar / menu-bar colour.
+/// Severity bucket for a remaining percentage; drives bar / menu-bar colour.
 public enum UsageLevel: Equatable, Sendable {
     case normal
     case warning
     case critical
 
-    /// `< 70` → normal, `70–89` → warning, `>= 90` → critical. NaN is treated as normal.
-    public init(percent: Double) {
-        if percent >= 90 {
+    /// `> 30` left → normal, `10–30` left → warning, `< 10` left → critical. NaN is treated as normal.
+    public init(remaining: Double) {
+        if remaining < 10 {
             self = .critical
-        } else if percent >= 70 {
+        } else if remaining <= 30 {
             self = .warning
         } else {
             self = .normal
@@ -18,9 +18,10 @@ public enum UsageLevel: Equatable, Sendable {
     }
 }
 
-/// Number of filled segments in a `total`-segment bar: `round(percent / (100 / total))`, clamped to `0...total`.
-public func filledSegments(percent: Double, total: Int = 10) -> Int {
-    guard total > 0, percent.isFinite else { return 0 }
-    let raw = (percent / (100.0 / Double(total))).rounded()
+/// Number of filled segments in a `total`-segment bar for a remaining percentage:
+/// `round(remaining / (100 / total))`, clamped to `0...total`. A full bar means plenty left.
+public func filledSegments(remaining: Double, total: Int = 10) -> Int {
+    guard total > 0, remaining.isFinite else { return 0 }
+    let raw = (remaining / (100.0 / Double(total))).rounded()
     return min(max(Int(raw), 0), total)
 }

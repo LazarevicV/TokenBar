@@ -64,10 +64,10 @@ struct ProviderSectionView: View {
     @ViewBuilder
     private func usageRows(_ usage: ProviderUsage) -> some View {
         if let session = usage.session {
-            row("Current session") { UsageBarView(label: "Current session", percent: session.percent) }
+            row("Current session") { UsageBarView(label: "Current session", remaining: session.remaining) }
         }
         if let weekly = usage.weekly {
-            row("Weekly") { UsageBarView(label: "Weekly", percent: weekly.percent) }
+            row("Weekly") { UsageBarView(label: "Weekly", remaining: weekly.remaining) }
         }
         if let session = usage.session {
             resetRow(session: session, weekly: usage.weekly)

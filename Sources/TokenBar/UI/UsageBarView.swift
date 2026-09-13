@@ -12,15 +12,17 @@ extension UsageLevel {
     }
 }
 
-/// A ten-segment capsule bar with a trailing percentage, e.g. `███████░░░ 68%`.
+/// A ten-segment capsule bar showing what is *left* in a window, with a trailing
+/// percentage, e.g. `███████░░░ 68% left`. A full bar means plenty left; empty means exhausted.
 struct UsageBarView: View {
     var label: String
-    var percent: Double
+    /// Percentage remaining in the window (see `UsageWindow.remaining`).
+    var remaining: Double
     var segments: Int = 10
 
-    private var level: UsageLevel { UsageLevel(percent: percent) }
-    private var filled: Int { filledSegments(percent: percent, total: segments) }
-    private var roundedPercent: Int { Int(min(max(percent, 0), 999).rounded()) }
+    private var level: UsageLevel { UsageLevel(remaining: remaining) }
+    private var filled: Int { filledSegments(remaining: remaining, total: segments) }
+    private var roundedRemaining: Int { Int(min(max(remaining, 0), 100).rounded()) }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -31,12 +33,12 @@ struct UsageBarView: View {
                         .frame(height: 8)
                 }
             }
-            Text("\(roundedPercent)%")
+            Text("\(roundedRemaining)% left")
                 .font(.system(.body, design: .default).monospacedDigit())
                 .foregroundStyle(level == .normal ? Color.primary : level.color)
-                .frame(width: 40, alignment: .trailing)
+                .frame(width: 66, alignment: .trailing)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(label) \(roundedPercent) percent")
+        .accessibilityLabel("\(label), \(roundedRemaining) percent left")
     }
 }
