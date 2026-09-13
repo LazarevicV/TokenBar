@@ -303,6 +303,11 @@ public final class UsageStore {
             switch result {
             case .success(let usage):
                 newStatuses[provider.id] = .ok(usage)
+                if let previous = lastGood[provider.id]?.usage, Self.usageIncreased(from: previous, to: usage) {
+                    // Consumption grew between two polls: the account is in use somewhere,
+                    // possibly on another machine where no local files change.
+                    activeUntil[provider.id] = timestamp.addingTimeInterval(Settings.activeWindow)
+                }
                 lastGood[provider.id] = LastGood(usage: usage, at: timestamp)
                 rateLimitStrikes[provider.id] = 0
             case .failure(let error):
@@ -321,6 +326,15 @@ public final class UsageStore {
         } else {
             backoff.recordSuccess()
         }
+    }
+
+    /// True when either window's used percentage rose (a reset lowers it and does not count).
+    static func usageIncreased(from old: ProviderUsage, to new: ProviderUsage) -> Bool {
+        func rose(_ a: UsageWindow?, _ b: UsageWindow?) -> Bool {
+            guard let a, let b else { return false }
+            return b.percent > a.percent + 0.0001
+        }
+        return rose(old.session, new.session) || rose(old.weekly, new.weekly)
     }
 
     /// Maps a provider error onto the status shown in the UI. Messages must not contain secrets.

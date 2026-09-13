@@ -77,7 +77,7 @@ struct PopoverView: View {
                     .foregroundStyle(.secondary)
             }
             if !activeProviders.isEmpty {
-                Text("● active")
+                Text("● \(activeProviders.joined(separator: ", ")) active")
                     .font(.caption)
                     .foregroundStyle(.green)
                     .help("\(activeProviders.joined(separator: ", ")) in use — refreshing faster")

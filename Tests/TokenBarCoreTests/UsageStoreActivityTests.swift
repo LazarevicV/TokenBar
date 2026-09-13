@@ -158,3 +158,36 @@ struct UsageStoreActivityTests {
         #expect(await recorder.intervals == [300, 15])
     }
 }
+
+
+@MainActor
+struct UsageStoreRemoteActivityTests {
+    @Test func risingUsageMarksProviderActiveEvenWithoutLocalFiles() async {
+        let (settings, defaults, name) = makeSettings()
+        defer { defaults.removePersistentDomain(forName: name) }
+        var clock = Date(timeIntervalSince1970: 2_000_000)
+        let codex = FakeProvider(id: .codex, result: .success(usage(.codex, session: 40)))
+        let store = UsageStore(providers: [codex], settings: settings, now: { clock }, sleeper: { _ in })
+
+        await store.refreshAll()
+        #expect(!store.isActive(.codex))
+
+        // Same numbers again: nobody is using it.
+        clock = clock.addingTimeInterval(60)
+        await store.refreshAll()
+        #expect(!store.isActive(.codex))
+
+        // Usage went up between polls: treat as active for the activity window.
+        await codex.state.set(.success(usage(.codex, session: 43)))
+        clock = clock.addingTimeInterval(60)
+        await store.refreshAll()
+        #expect(store.isActive(.codex))
+        clock = clock.addingTimeInterval(Settings.activeWindow + 1)
+        #expect(!store.isActive(.codex))
+
+        // A reset (usage dropping) must not count as activity.
+        await codex.state.set(.success(usage(.codex, session: 0)))
+        await store.refreshAll()
+        #expect(!store.isActive(.codex))
+    }
+}

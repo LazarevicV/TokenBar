@@ -89,6 +89,10 @@ names and contents are never read. Directories that do not exist yet are
 checked once a minute and watched once they appear. Turn the feature off with
 the *Refresh faster while Claude or Codex are in use* setting.
 
+A second trigger works across machines: if a provider's used percentage goes up between two
+polls, the account is being used somewhere (for example on another computer), so the provider
+is treated as active for the same five-minute window even though no local files changed.
+
 ## Notes
 
 - **No App Sandbox.** TokenBar reads `~/.codex/auth.json` and the Claude Code
