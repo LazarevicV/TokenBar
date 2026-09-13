@@ -161,13 +161,23 @@ public final class UsageStore {
     /// Remaining session percentage for the menu bar. `.lowestRemaining` is the minimum across
     /// providers with an `.ok` status; a specific provider yields its value only while it is `.ok`.
     public func menuBarSessionRemaining(for choice: MenuBarProvider) -> Double? {
+        menuBarSelection(for: choice)?.remaining
+    }
+
+    /// The provider the menu bar should represent and its remaining session percentage.
+    /// `.lowestRemaining` resolves to whichever `.ok` provider currently has the least left
+    /// (ties broken by display order); a specific provider is returned only while it is `.ok`.
+    public func menuBarSelection(for choice: MenuBarProvider) -> (id: ProviderID, remaining: Double)? {
         switch choice {
         case .lowestRemaining:
-            return statuses.values.compactMap(sessionRemaining).min()
+            return orderedProviders
+                .compactMap { entry in statuses[entry.id].flatMap(sessionRemaining).map { (entry.id, $0) } }
+                .min { $0.1 < $1.1 }
+                .map { (id: $0.0, remaining: $0.1) }
         case .claude:
-            return statuses[.claude].flatMap(sessionRemaining)
+            return statuses[.claude].flatMap(sessionRemaining).map { (id: .claude, remaining: $0) }
         case .codex:
-            return statuses[.codex].flatMap(sessionRemaining)
+            return statuses[.codex].flatMap(sessionRemaining).map { (id: .codex, remaining: $0) }
         }
     }
 

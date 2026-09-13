@@ -166,9 +166,9 @@ struct UsageBarView_Previews: PreviewProvider {
 struct MenuBarLabel_Previews: PreviewProvider {
     static var previews: some View {
         HStack(spacing: 16) {
-            MenuBarLabel(sessionRemaining: nil, showPercent: true)
-            MenuBarLabel(sessionRemaining: 32, showPercent: true)
-            MenuBarLabel(sessionRemaining: 22, showPercent: true)
+            MenuBarLabel(provider: nil, sessionRemaining: nil, showPercent: true)
+            MenuBarLabel(provider: .codex, sessionRemaining: 32, showPercent: true)
+            MenuBarLabel(provider: .claude, sessionRemaining: 22, showPercent: true)
             MenuBarLabel(sessionRemaining: 0, showPercent: true)
             MenuBarLabel(sessionRemaining: 32, showPercent: false)
         }

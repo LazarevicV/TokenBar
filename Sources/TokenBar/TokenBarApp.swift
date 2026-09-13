@@ -14,12 +14,17 @@ struct TokenBarApp: App {
         model.start()
     }
 
+    private var menuBarSelection: (id: ProviderID, remaining: Double)? {
+        model.store.menuBarSelection(for: model.settings.menuBarProvider)
+    }
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarContent(model: model)
         } label: {
             MenuBarLabel(
-                sessionRemaining: model.store.menuBarSessionRemaining(for: model.settings.menuBarProvider),
+                provider: menuBarSelection?.id,
+                sessionRemaining: menuBarSelection?.remaining,
                 showPercent: model.settings.showPercentInMenuBar
             )
         }

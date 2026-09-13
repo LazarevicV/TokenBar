@@ -533,3 +533,28 @@ struct UsageStorePacingTests {
         #expect(store.requiredInterval(for: .claude) == 120)
     }
 }
+
+@MainActor
+struct UsageStoreMenuBarSelectionTests {
+    @Test func selectionPicksProviderWithLeastLeftOrTheChosenOne() async {
+        let (settings, defaults, name) = makeSettings()
+        defer { defaults.removePersistentDomain(forName: name) }
+        let claude = FakeProvider(id: .claude, result: .success(usage(.claude, session: 40)))  // 60 left
+        let codex = FakeProvider(id: .codex, result: .success(usage(.codex, session: 75)))     // 25 left
+        let store = UsageStore(providers: [claude, codex], settings: settings, sleeper: { _ in })
+        #expect(store.menuBarSelection(for: .lowestRemaining) == nil)
+
+        await store.refreshAll()
+        let lowest = store.menuBarSelection(for: .lowestRemaining)
+        #expect(lowest?.id == .codex)
+        #expect(lowest?.remaining == 25)
+        #expect(store.menuBarSelection(for: .claude)?.id == .claude)
+        #expect(store.menuBarSelection(for: .claude)?.remaining == 60)
+
+        // A provider that is not `.ok` cannot be selected.
+        await codex.state.set(.failure(ProviderError.tokenExpired))
+        await store.refreshAll()
+        #expect(store.menuBarSelection(for: .codex) == nil)
+        #expect(store.menuBarSelection(for: .lowestRemaining)?.id == .claude)
+    }
+}

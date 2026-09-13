@@ -1,9 +1,12 @@
 import SwiftUI
 import TokenBarCore
 
-/// Menu-bar item content: gauge symbol plus optional compact remaining session percentage.
+/// Menu-bar item content: the selected provider's glyph followed by its remaining session percentage.
+/// Falls back to a gauge symbol while no provider has data.
 struct MenuBarLabel: View {
-    /// Percentage left in the session window chosen by `Settings.menuBarProvider`.
+    /// Provider whose glyph is shown; nil while nothing is loaded.
+    var provider: ProviderID?
+    /// Percentage left in that provider's session window.
     var sessionRemaining: Double?
     var showPercent: Bool
 
@@ -11,8 +14,17 @@ struct MenuBarLabel: View {
     private var roundedRemaining: Int? { sessionRemaining.map { Int(min(max($0, 0), 100).rounded()) } }
 
     var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: "gauge.with.dots.needle.33percent")
+        HStack(spacing: 4) {
+            if let provider, let image = ProviderGlyph.image(for: provider) {
+                Image(nsImage: image)
+                    .renderingMode(.template)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(height: 14)
+            } else {
+                Image(systemName: "gauge.with.dots.needle.33percent")
+            }
             if showPercent, let roundedRemaining {
                 Text("\(roundedRemaining)%")
                     .font(.system(size: 12, weight: .medium).monospacedDigit())
@@ -24,7 +36,8 @@ struct MenuBarLabel: View {
     }
 
     private var accessibilityText: String {
-        guard let roundedRemaining else { return "TokenBar" }
-        return "TokenBar, session \(roundedRemaining) percent left"
+        let name = provider.map { $0 == .claude ? "Claude" : $0 == .codex ? "Codex" : $0.rawValue }
+        guard let roundedRemaining, let name else { return "TokenBar" }
+        return "TokenBar, \(name) session \(roundedRemaining) percent left"
     }
 }
