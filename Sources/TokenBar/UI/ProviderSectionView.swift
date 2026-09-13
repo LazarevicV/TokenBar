@@ -76,7 +76,7 @@ struct ProviderSectionView: View {
             resetRow(session: session, weekly: usage.weekly)
         } else if let weekly = usage.weekly {
             row("Resets") {
-                Text(formatter.string(for: weekly.resetsAt))
+                Text(resetText(weekly.resetsAt))
                     .font(.body.monospacedDigit())
                 Spacer(minLength: 0)
             }
@@ -107,11 +107,16 @@ struct ProviderSectionView: View {
         }
     }
 
+    /// Idle windows have no reset time yet; the clock starts with the first request.
+    private func resetText(_ date: Date?) -> String {
+        date.map(formatter.string(for:)) ?? "when a session starts"
+    }
+
     @ViewBuilder
     private func resetRow(session: UsageWindow, weekly: UsageWindow?) -> some View {
         let limitReached = session.percent >= 100 || (weekly?.percent ?? 0) >= 100
-        let sessionReset = formatter.string(for: session.resetsAt)
-        let weeklyCaption = weekly.map { "weekly resets \(formatter.string(for: $0.resetsAt))" }
+        let sessionReset = resetText(session.resetsAt)
+        let weeklyCaption = weekly.map { "weekly resets \(resetText($0.resetsAt))" }
         row(limitReached ? "Limit reached" : "Resets") {
             VStack(alignment: .leading, spacing: 1) {
                 Text(limitReached ? "resets \(sessionReset)" : sessionReset)

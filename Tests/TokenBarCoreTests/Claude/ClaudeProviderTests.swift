@@ -26,10 +26,10 @@ private func response(_ request: URLRequest, status: Int) -> HTTPURLResponse {
     #expect(usage.session?.label == "5h")
     #expect(usage.weekly?.percent == 12)
     #expect(usage.weekly?.label == "week")
-    let session = try #require(usage.session)
-    let weekly = try #require(usage.weekly)
-    #expect(abs(session.resetsAt.timeIntervalSince1970 - 1789315800.944794) < 0.001)
-    #expect(abs(weekly.resetsAt.timeIntervalSince1970 - 1789761600.944817) < 0.001)
+    let sessionReset = try #require(usage.session?.resetsAt)
+    let weeklyReset = try #require(usage.weekly?.resetsAt)
+    #expect(abs(sessionReset.timeIntervalSince1970 - 1789315800.944794) < 0.001)
+    #expect(abs(weeklyReset.timeIntervalSince1970 - 1789761600.944817) < 0.001)
     #expect(usage.plan == "pro")
     #expect(usage.extras == ["Extra usage: $0.21 of $99.00"])
 }
@@ -105,4 +105,18 @@ func claudeProviderRedactsDecodeFailures(body: String) async {
         return (Data(), response(request, status: 200))
     }
     await #expect(throws: ProviderError.notLoggedIn("Run claude to sign in")) { try await provider.fetch() }
+}
+
+@Test func claudeProviderKeepsIdleSessionWindowWithoutResetTime() async throws {
+    // Live shape when no session is open: utilization 0 and a null reset for five_hour.
+    let body = #"{"five_hour":{"utilization":0.0,"resets_at":null},"seven_day":{"utilization":0.0,"resets_at":"2026-09-18T20:00:00.417333+00:00"}}"#
+    let provider = ClaudeProvider(credentialSource: testClaudeSource) { request in
+        (Data(body.utf8), response(request, status: 200))
+    }
+    let usage = try await provider.fetch()
+    let session = try #require(usage.session)
+    #expect(session.percent == 0)
+    #expect(session.remaining == 100)
+    #expect(session.resetsAt == nil)
+    #expect(usage.weekly?.resetsAt != nil)
 }

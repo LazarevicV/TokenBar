@@ -167,7 +167,7 @@ enum DebugDump {
                     lines.append("  \(name): none")
                     continue
                 }
-                lines.append("  \(name): \(Int(window.percent.rounded()))% label=\(window.label) resets=\(iso.string(from: window.resetsAt))")
+                lines.append("  \(name): \(Int(window.percent.rounded()))% label=\(window.label) resets=\(window.resetsAt.map(iso.string(from:)) ?? "none")")
             }
             if !usage.extras.isEmpty {
                 lines.append("  extras: \(usage.extras.count) line(s)")

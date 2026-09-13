@@ -74,8 +74,9 @@ public struct ClaudeProvider: UsageProvider {
     }
 
     private static func window(_ window: ClaudeUsageResponse.Window?, label: String) -> UsageWindow? {
-        guard let window, let resetsAt = window.resetsAt else { return nil }
-        return UsageWindow(percent: window.utilization, resetsAt: resetsAt, label: label)
+        // An idle window (no session started yet) has utilization 0 and no reset time; still show it.
+        guard let window else { return nil }
+        return UsageWindow(percent: window.utilization, resetsAt: window.resetsAt, label: label)
     }
 
     private static func extraUsageLine(_ extra: ClaudeUsageResponse.ExtraUsage) -> String {
