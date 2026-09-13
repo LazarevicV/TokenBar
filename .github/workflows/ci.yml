@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the running check obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build
+        run: make build
+
+      # Live tests stay skipped: they need a signed-in CLI and TOKENBAR_LIVE=1.
+      - name: Test
+        run: make test
+
+  bundle:
+    name: Bundle app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build TokenBar.app
+        run: make app
+
+      - name: Check bundle layout
+        run: |
+          set -eu
+          APP=build/TokenBar.app
+          for path in \
+            "$APP/Contents/MacOS/TokenBar" \
+            "$APP/Contents/Info.plist" \
+            "$APP/Contents/Resources/AppIcon.icns" \
+            "$APP/Contents/Resources/TokenBar_TokenBar.bundle"; do
+            test -e "$path" || { echo "Missing $path"; exit 1; }
+          done
+          # LSUIElement keeps the app out of the Dock; losing it changes how it launches.
+          /usr/libexec/PlistBuddy -c "Print :LSUIElement" "$APP/Contents/Info.plist" | grep -qx true
+          codesign --verify --deep --strict "$APP"
+
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: TokenBar-app
+          path: build/TokenBar.app
+          retention-days: 14
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Scan tracked files for credentials
+        run: ./scripts/scan-secrets.sh
