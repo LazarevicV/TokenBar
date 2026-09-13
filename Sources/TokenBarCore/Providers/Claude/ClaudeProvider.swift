@@ -3,6 +3,9 @@ import Foundation
 public struct ClaudeProvider: UsageProvider {
     public let id: ProviderID = .claude
     public let displayName = "Claude"
+    /// Measured 2026-09-13: api.anthropic.com/api/oauth/usage answers one request per ~120 s
+    /// per token and returns 429 for anything faster. Keep a safety margin.
+    public var minimumRefreshInterval: TimeInterval { 130 }
 
     private let loadCredentials: @Sendable () throws -> ClaudeCredentials
     private let send: @Sendable (URLRequest) async throws -> (Data, URLResponse)
