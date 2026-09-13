@@ -10,8 +10,18 @@ struct TokenBarApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("TokenBar", systemImage: "gauge.with.dots.needle.33percent") {
-            PopoverView()
+        MenuBarExtra {
+            // Static sample data until UsageStore (built on another branch) is wired in.
+            PopoverView(
+                sections: SampleData.sections,
+                lastUpdated: SampleData.now,
+                isRefreshing: false,
+                onRefresh: {},
+                onOpenSettings: {},
+                onQuit: { NSApplication.shared.terminate(nil) }
+            )
+        } label: {
+            MenuBarLabel(highestSessionPercent: 68, showPercent: true)
         }
         .menuBarExtraStyle(.window)
     }
