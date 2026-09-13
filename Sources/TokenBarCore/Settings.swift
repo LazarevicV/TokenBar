@@ -21,6 +21,7 @@ public final class Settings {
         public static let showPercentInMenuBar = "tokenbar.showPercentInMenuBar"
         public static let menuBarProvider = "tokenbar.menuBarProvider"
         public static let enabledProviders = "tokenbar.enabledProviders"
+        public static let refreshWhileActive = "tokenbar.refreshWhileActive"
     }
 
     /// Refresh intervals offered in the UI, in seconds.
@@ -28,6 +29,8 @@ public final class Settings {
     public static let defaultRefreshInterval: TimeInterval = 60
     public static let defaultEnabledProviders: Set<ProviderID> = [.claude, .codex]
     public static let defaultMenuBarProvider: MenuBarProvider = .lowestRemaining
+    /// How long a provider counts as "in use" after activity was observed, in seconds. Not user-facing.
+    public static let activeWindow: TimeInterval = 300
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -59,6 +62,11 @@ public final class Settings {
         didSet {
             defaults.set(enabledProviders.map(\.rawValue).sorted(), forKey: Keys.enabledProviders)
         }
+    }
+
+    /// Poll a provider at its own minimum interval while its CLI is in use (see `UsageStore.noteActivity`).
+    public var refreshWhileActive: Bool {
+        didSet { defaults.set(refreshWhileActive, forKey: Keys.refreshWhileActive) }
     }
 
     /// Last error from registering/unregistering launch at login, if any.
@@ -113,6 +121,12 @@ public final class Settings {
             enabledProviders = Set(raw.map(ProviderID.init(rawValue:)))
         } else {
             enabledProviders = Settings.defaultEnabledProviders
+        }
+
+        if defaults.object(forKey: Keys.refreshWhileActive) != nil {
+            refreshWhileActive = defaults.bool(forKey: Keys.refreshWhileActive)
+        } else {
+            refreshWhileActive = true
         }
     }
 

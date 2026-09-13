@@ -19,6 +19,7 @@ struct SettingsTests {
         #expect(settings.showPercentInMenuBar == true)
         #expect(settings.menuBarProvider == .lowestRemaining)
         #expect(settings.enabledProviders == [.claude, .codex])
+        #expect(settings.refreshWhileActive == true)
         #expect(settings.launchAtLoginError == nil)
     }
 
@@ -30,8 +31,10 @@ struct SettingsTests {
             settings.showPercentInMenuBar = false
             settings.menuBarProvider = .codex
             settings.enabledProviders = [.codex]
+            settings.refreshWhileActive = false
         }
         let reloaded = Settings(defaults: temp.defaults)
+        #expect(reloaded.refreshWhileActive == false)
         #expect(reloaded.refreshInterval == 300)
         #expect(reloaded.showPercentInMenuBar == false)
         #expect(reloaded.menuBarProvider == .codex)
@@ -45,7 +48,9 @@ struct SettingsTests {
         settings.showPercentInMenuBar = false
         settings.menuBarProvider = .claude
         settings.setEnabled(.claude, false)
+        settings.refreshWhileActive = false
         #expect(temp.defaults.double(forKey: "tokenbar.refreshInterval") == 30)
+        #expect(temp.defaults.bool(forKey: "tokenbar.refreshWhileActive") == false)
         #expect(temp.defaults.bool(forKey: "tokenbar.showPercentInMenuBar") == false)
         #expect(temp.defaults.string(forKey: "tokenbar.menuBarProvider") == "claude")
         #expect(temp.defaults.stringArray(forKey: "tokenbar.enabledProviders") == ["codex"])
