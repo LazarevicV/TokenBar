@@ -12,7 +12,8 @@ let package = Package(
         .executableTarget(
             name: "TokenBar",
             dependencies: ["TokenBarCore"],
-            path: "Sources/TokenBar"
+            path: "Sources/TokenBar",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "TokenBarCoreTests",

@@ -6,12 +6,17 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 swift build -c release
-BIN="$(swift build -c release --show-bin-path)/TokenBar"
+BIN_DIR="$(swift build -c release --show-bin-path)"
+BIN="$BIN_DIR/TokenBar"
+# SPM puts the target's processed resources in this bundle next to the binary.
+# `Bundle.module` searches `Bundle.main.resourceURL`, so it must land in Contents/Resources.
+RESOURCE_BUNDLE="$BIN_DIR/TokenBar_TokenBar.bundle"
 
 APP="$ROOT/build/TokenBar.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/TokenBar"
+cp -R "$RESOURCE_BUNDLE" "$APP/Contents/Resources/"
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
 if [ ! -f "$ROOT/Resources/AppIcon.icns" ]; then
   swift "$ROOT/scripts/make-icon.swift" "$ROOT/assets/tokenbar-logo-app-icon.png" "$ROOT/build/AppIcon.iconset"

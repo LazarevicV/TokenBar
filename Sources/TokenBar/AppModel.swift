@@ -106,6 +106,8 @@ enum DebugDump {
         if let lastUpdated = store.lastUpdated {
             lines.append("updated: \(iso.string(from: lastUpdated))")
         }
+        let glyphs = store.orderedProviders.map { "\($0.id.rawValue)=\(ProviderGlyph.image(for: $0.id) == nil ? "missing" : "ok")" }
+        lines.append("glyphs: \(glyphs.joined(separator: " "))")
         return lines.joined(separator: "\n")
     }
 

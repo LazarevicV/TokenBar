@@ -1,8 +1,9 @@
 import SwiftUI
 import TokenBarCore
 
-/// One provider block: header with plan badge, then usage bars or a status line with an action.
+/// One provider block: header with provider glyph and plan badge, then usage bars or a status line with an action.
 struct ProviderSectionView: View {
+    var id: ProviderID
     var displayName: String
     var status: ProviderStatus
     /// Shown under the bars (with a Retry button) when `status` carries last-good data after a failed refresh.
@@ -48,7 +49,7 @@ struct ProviderSectionView: View {
 
     private var header: some View {
         HStack {
-            Text(displayName).font(.headline)
+            ProviderGlyph(id: id, displayName: displayName)
             Spacer()
             if case .ok(let usage) = status, let plan = usage.plan, !plan.isEmpty {
                 Text(plan.capitalized)

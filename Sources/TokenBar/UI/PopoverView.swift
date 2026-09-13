@@ -20,6 +20,7 @@ struct PopoverView: View {
             ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
                 if index > 0 { Divider() }
                 ProviderSectionView(
+                    id: section.id,
                     displayName: section.displayName,
                     status: section.status,
                     staleMessage: section.staleMessage,

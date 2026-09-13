@@ -112,16 +112,16 @@ struct PopoverView_Previews: PreviewProvider {
 
 struct ProviderSectionView_Previews: PreviewProvider {
     static var previews: some View {
-        ProviderSectionView(displayName: "Codex", status: .tokenExpired, onAction: {})
+        ProviderSectionView(id: .codex, displayName: "Codex", status: .tokenExpired, onAction: {})
             .padding().frame(width: PopoverView.width)
             .previewDisplayName("Section – token expired")
-        ProviderSectionView(displayName: "Claude", status: .notLoggedIn, onAction: {})
+        ProviderSectionView(id: .claude, displayName: "Claude", status: .notLoggedIn, onAction: {})
             .padding().frame(width: PopoverView.width)
             .previewDisplayName("Section – not logged in")
-        ProviderSectionView(displayName: "Claude", status: .error("Offline · showing data from 3 min ago"), onAction: {})
+        ProviderSectionView(id: .claude, displayName: "Claude", status: .error("Offline · showing data from 3 min ago"), onAction: {})
             .padding().frame(width: PopoverView.width)
             .previewDisplayName("Section – error")
-        ProviderSectionView(displayName: "Claude", status: .loading)
+        ProviderSectionView(id: .claude, displayName: "Claude", status: .loading)
             .padding().frame(width: PopoverView.width)
             .previewDisplayName("Section – loading")
     }
