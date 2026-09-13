@@ -31,6 +31,36 @@ make clean
 The app is menu-bar only: it has no Dock icon and no main window. Click the gauge
 icon in the menu bar to open the popover; use Quit in the popover to exit.
 
+## Popover and states
+
+Each provider block shows the current-session and weekly bars (accent < 70 %,
+orange 70–89 %, red >= 90 %), the session reset time and the weekly reset as a
+caption. The menu-bar text shows the highest session percentage across providers.
+Other states:
+
+- **Loading** – first fetch in progress.
+- **Not signed in** – no credentials found for that CLI. *Open Terminal* runs
+  `claude` / `codex` so you can sign in.
+- **Session expired** – the stored token was rejected (HTTP 401/403). Run the CLI
+  once to refresh it; *Open Terminal* does that for you.
+- **Offline / HTTP error** – the last good data stays visible, dimmed, with a
+  caption such as `Offline · showing data from 3 min ago` and a *Retry* button.
+  On 429/5xx the app backs off exponentially (up to 10 min).
+- **Limit reached** – a window is at 100 %; the reset line turns red.
+
+## Settings
+
+Open with the gear button (or `Cmd-,` while the popover is open):
+
+- **Refresh every** 30 s / 1 min / 5 min (15 s while the popover is open).
+- **Show highest session % in menu bar** – toggles the text next to the icon.
+- **Launch at login** – registers via `SMAppService`; errors are shown inline.
+  Only works from a `.app` bundle (`make app`), not the bare binary.
+- **Providers** – enable/disable Claude and Codex; takes effect immediately.
+
+Set `TOKENBAR_DEBUG_DUMP=1` when launching the binary to print a token-free
+summary (percentages, reset times, plan, status) after the first refresh.
+
 ## Notes
 
 - **No App Sandbox.** TokenBar reads `~/.codex/auth.json` and the Claude Code
