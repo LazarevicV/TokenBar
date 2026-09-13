@@ -43,7 +43,9 @@ import Testing
         #expect(f.string(for: Self.now.addingTimeInterval(60)) == "in 1m")
         #expect(f.string(for: Self.now.addingTimeInterval(45 * 60)) == "in 45m")
         #expect(f.string(for: Self.now.addingTimeInterval(2 * 3600 + 15 * 60)) == "in 2h 15m")
-        #expect(f.string(for: Self.now.addingTimeInterval(2 * 3600 + 15 * 60 + 59)) == "in 2h 15m")
+        // Annotate the sum: three untyped literal terms make older compilers give up type-checking.
+        let twoHoursFifteen: TimeInterval = 2 * 3600 + 15 * 60 + 59
+        #expect(f.string(for: Self.now.addingTimeInterval(twoHoursFifteen)) == "in 2h 15m")
         #expect(f.string(for: Self.now.addingTimeInterval(2 * 3600)) == "in 2h 0m")
         #expect(f.string(for: Self.now.addingTimeInterval(24 * 3600 - 1)) == "in 23h 59m")
     }
@@ -67,7 +69,8 @@ import Testing
         #expect(gbBelgrade.string(for: wednesday14) == "Wed 16:00")
 
         // Wednesday 23:30 UTC is already Thursday in Belgrade.
-        let lateWednesday = Self.now.addingTimeInterval(2 * 86_400 + 13 * 3600 + 30 * 60)
+        let lateOffset: TimeInterval = 2 * 86_400 + 13 * 3600 + 30 * 60
+        let lateWednesday = Self.now.addingTimeInterval(lateOffset)
         #expect(gbUTC.string(for: lateWednesday) == "Wed 23:30")
         #expect(gbBelgrade.string(for: lateWednesday) == "Thu 01:30")
     }
