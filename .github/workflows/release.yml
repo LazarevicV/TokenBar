@@ -1,0 +1,83 @@
+name: Release
+
+# Pushing a tag such as v0.2.0 builds TokenBar.app, zips it and publishes a GitHub
+# Release with the zip attached. The tag must match CFBundleShortVersionString in
+# Resources/Info.plist so the app reports the version it was released as.
+#
+# If the TAP_GITHUB_TOKEN secret is set (a fine-grained PAT with contents: write on
+# LazarevicV/homebrew-tap), the cask in that tap is bumped to the new version as well.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: macos-15
+    env:
+      TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check tag matches Info.plist version
+        run: |
+          set -eu
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PLIST_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)"
+          if [ "$TAG_VERSION" != "$PLIST_VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match Info.plist version $PLIST_VERSION." >&2
+            echo "Bump CFBundleShortVersionString, commit, then tag that commit." >&2
+            exit 1
+          fi
+          echo "VERSION=$TAG_VERSION" >> "$GITHUB_ENV"
+
+      - name: Build and zip TokenBar.app
+        run: |
+          make dist
+          make check-bundle
+          echo "SHA256=$(shasum -a 256 "build/TokenBar-$VERSION.zip" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "build/TokenBar-$VERSION.zip" \
+            --title "TokenBar $VERSION" \
+            --generate-notes \
+            --notes "SHA-256 of TokenBar-$VERSION.zip: \`$SHA256\`
+
+          Install with Homebrew: \`brew install --cask --no-quarantine lazarevicv/tap/tokenbar\`
+          The app is not notarized; see the README for the one-time Gatekeeper step."
+
+      - name: Check out Homebrew tap
+        if: env.TAP_TOKEN != ''
+        uses: actions/checkout@v5
+        with:
+          repository: LazarevicV/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: tap
+
+      - name: Bump cask in Homebrew tap
+        if: env.TAP_TOKEN != ''
+        run: |
+          set -eu
+          cd tap
+          CASK=Casks/tokenbar.rb
+          sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/" "$CASK"
+          sed -i '' -E "s/^  sha256 .*/  sha256 \"$SHA256\"/" "$CASK"
+          git diff --quiet && { echo "Cask already at $VERSION"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "tokenbar $VERSION"
+          git push
+
+      - name: Tap not updated
+        if: env.TAP_TOKEN == ''
+        run: |
+          echo "TAP_GITHUB_TOKEN is not set; update LazarevicV/homebrew-tap by hand:"
+          echo "  version \"$VERSION\""
+          echo "  sha256 \"$SHA256\""

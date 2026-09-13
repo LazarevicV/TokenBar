@@ -1,4 +1,4 @@
-.PHONY: build test app run clean icon scan-secrets
+.PHONY: build test app run install dist check-bundle clean icon scan-secrets
 
 # With Command Line Tools only (no Xcode), the Swift Testing macro plugin lives in a
 # subdirectory that `swift test` does not search. Pass it explicitly when present.
@@ -18,6 +18,17 @@ app:
 
 run: app
 	open build/TokenBar.app
+
+# Build and copy TokenBar.app into /Applications (INSTALL_DIR=~/Applications to override).
+install:
+	./scripts/install.sh
+
+# build/TokenBar-<version>.zip for GitHub Releases and the Homebrew cask.
+dist: app
+	./scripts/dist.sh
+
+check-bundle:
+	./scripts/check-bundle.sh
 
 scan-secrets:
 	./scripts/scan-secrets.sh

@@ -9,28 +9,89 @@ already store on your machine. See `PLAN.md` for the full design.
 ## Requirements
 
 - macOS 14 (Sonoma) or later
-- Xcode Command Line Tools with a Swift 6 toolchain (`xcode-select --install`)
+- Xcode Command Line Tools with a Swift 6 toolchain (`xcode-select --install`), only
+  when building from source
 
 No third-party dependencies.
 
-## Build and run
+## Install
+
+### Homebrew (recommended)
 
 ```sh
-make run        # builds build/TokenBar.app (ad-hoc signed) and opens it
+brew install --cask --no-quarantine lazarevicv/tap/tokenbar
 ```
 
-Other targets:
+`--no-quarantine` is needed because TokenBar is not notarized (see *Gatekeeper*
+below). Later releases arrive with `brew upgrade`; remove the app with
+`brew uninstall --cask tokenbar` (add `--zap` to drop its preferences too).
+
+### Download
+
+Grab `TokenBar-<version>.zip` from the
+[latest release](https://github.com/LazarevicV/TokenBar/releases/latest), unzip
+it and drag `TokenBar.app` to `/Applications`. The SHA-256 of the zip is listed in
+the release notes.
+
+### Build from source
+
+Requires the Xcode Command Line Tools (`xcode-select --install`).
 
 ```sh
+git clone https://github.com/LazarevicV/TokenBar.git
+cd TokenBar
+make install    # builds TokenBar.app, copies it to /Applications and launches it
+```
+
+`make install` quits a running copy first and replaces it. Set
+`INSTALL_DIR=$HOME/Applications` to install somewhere other than `/Applications`.
+
+### Gatekeeper
+
+The app is ad-hoc signed, not notarized, so a copy downloaded from the internet
+is blocked the first time it opens ("Apple could not verify TokenBar is free of
+malware"). Either install with Homebrew's `--no-quarantine`, or open
+**System Settings › Privacy & Security** and click **Open Anyway** after the
+first attempt. Alternatively, clear the flag by hand:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/TokenBar.app
+```
+
+Apps built locally with `make install` are never quarantined and open directly.
+
+## Development
+
+```sh
+make run        # builds build/TokenBar.app (ad-hoc signed) and opens it from build/
 make build      # swift build (debug)
 make test       # swift test
 make app        # release build + assemble build/TokenBar.app
+make check-bundle  # verify the bundle layout and signature
+make dist       # zip build/TokenBar.app into build/TokenBar-<version>.zip
 make scan-secrets  # fail if a tracked file holds a credential-shaped string
 make clean
 ```
 
 The app is menu-bar only: it has no Dock icon and no main window. Click the gauge
 icon in the menu bar to open the popover; use Quit in the popover to exit.
+
+### Releasing
+
+1. Bump `CFBundleShortVersionString` in `Resources/Info.plist`, commit and merge.
+2. Tag that commit and push the tag:
+
+   ```sh
+   git tag v0.2.0 && git push origin v0.2.0
+   ```
+
+The *Release* workflow (`.github/workflows/release.yml`) refuses tags that do not
+match the plist version, builds and zips the app, publishes a GitHub Release with
+the zip attached, and bumps `Casks/tokenbar.rb` in
+[LazarevicV/homebrew-tap](https://github.com/LazarevicV/homebrew-tap). The cask
+bump needs a `TAP_GITHUB_TOKEN` repository secret: a fine-grained personal access
+token with *Contents: read and write* on the tap repository. Without it the
+workflow prints the new version and SHA-256 so the cask can be edited by hand.
 
 ## Continuous integration
 
@@ -40,7 +101,7 @@ Every pull request and every push to `main` runs three checks on GitHub Actions
 - **Build and test** — `make build` then `make test` on a macOS runner. The live
   tests stay skipped because they need `TOKENBAR_LIVE=1` and a signed-in CLI.
 - **Bundle app** — runs `make app`, checks the bundle layout and the ad-hoc
-  signature, and uploads `TokenBar.app` as a downloadable artifact.
+  signature, and uploads `TokenBar-<version>.zip` as a downloadable artifact.
 - **Secret scan** — `scripts/scan-secrets.sh` fails the build if a tracked file
   contains anything shaped like a token, a JWT or a personal email address.
 

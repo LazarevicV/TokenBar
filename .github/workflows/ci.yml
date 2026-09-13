@@ -42,26 +42,19 @@ jobs:
       - name: Build TokenBar.app
         run: make app
 
-      - name: Check bundle layout
-        run: |
-          set -eu
-          APP=build/TokenBar.app
-          for path in \
-            "$APP/Contents/MacOS/TokenBar" \
-            "$APP/Contents/Info.plist" \
-            "$APP/Contents/Resources/AppIcon.icns" \
-            "$APP/Contents/Resources/TokenBar_TokenBar.bundle"; do
-            test -e "$path" || { echo "Missing $path"; exit 1; }
-          done
-          # LSUIElement keeps the app out of the Dock; losing it changes how it launches.
-          /usr/libexec/PlistBuddy -c "Print :LSUIElement" "$APP/Contents/Info.plist" | grep -qx true
-          codesign --verify --deep --strict "$APP"
+      - name: Check bundle
+        run: make check-bundle
+
+      # ditto keeps the .app directory and permissions intact; uploading the raw
+      # bundle produced a zip with a bare Contents/ folder at the top level.
+      - name: Zip app
+        run: make dist
 
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
           name: TokenBar-app
-          path: build/TokenBar.app
+          path: build/TokenBar-*.zip
           retention-days: 14
 
   secrets:
