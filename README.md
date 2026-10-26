@@ -19,11 +19,12 @@ No third-party dependencies.
 ### Homebrew (recommended)
 
 ```sh
-brew install --cask --no-quarantine lazarevicv/tap/tokenbar
+brew install --cask lazarevicv/tap/tokenbar
 ```
 
-`--no-quarantine` is needed because TokenBar is not notarized (see *Gatekeeper*
-below). Later releases arrive with `brew upgrade`; remove the app with
+Homebrew quarantines everything it downloads and TokenBar is not notarized, so
+the first launch needs the one-time step under *Gatekeeper* below. Later
+releases arrive with `brew upgrade`; remove the app with
 `brew uninstall --cask tokenbar` (add `--zap` to drop its preferences too).
 
 ### Download
@@ -49,10 +50,10 @@ make install    # builds TokenBar.app, copies it to /Applications and launches i
 ### Gatekeeper
 
 The app is ad-hoc signed, not notarized, so a copy downloaded from the internet
-is blocked the first time it opens ("Apple could not verify TokenBar is free of
-malware"). Either install with Homebrew's `--no-quarantine`, or open
+(directly or through Homebrew) is blocked the first time it opens ("Apple could
+not verify TokenBar is free of malware"). Either open
 **System Settings › Privacy & Security** and click **Open Anyway** after the
-first attempt. Alternatively, clear the flag by hand:
+first attempt, or clear the quarantine flag by hand:
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/TokenBar.app

@@ -50,8 +50,8 @@ jobs:
             --generate-notes \
             --notes "SHA-256 of TokenBar-$VERSION.zip: \`$SHA256\`
 
-          Install with Homebrew: \`brew install --cask --no-quarantine lazarevicv/tap/tokenbar\`
-          The app is not notarized; see the README for the one-time Gatekeeper step."
+          Install with Homebrew: \`brew install --cask lazarevicv/tap/tokenbar\`
+          The app is not notarized, so macOS blocks the first launch; see the README's Gatekeeper section for the one-time step."
 
       - name: Check out Homebrew tap
         if: env.TAP_TOKEN != ''
