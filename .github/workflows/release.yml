@@ -21,7 +21,7 @@ jobs:
     env:
       TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Check tag matches Info.plist version
         run: |
@@ -55,7 +55,7 @@ jobs:
 
       - name: Check out Homebrew tap
         if: env.TAP_TOKEN != ''
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: LazarevicV/homebrew-tap
           token: ${{ secrets.TAP_GITHUB_TOKEN }}

@@ -19,7 +19,7 @@ jobs:
     name: Build and test
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Show toolchain
         run: |
@@ -37,7 +37,7 @@ jobs:
     name: Bundle app
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Build TokenBar.app
         run: make app
@@ -61,6 +61,6 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Scan tracked files for credentials
         run: ./scripts/scan-secrets.sh
